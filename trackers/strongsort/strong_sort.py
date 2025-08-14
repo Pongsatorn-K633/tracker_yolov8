@@ -6,11 +6,11 @@ import gdown
 from os.path import exists as file_exists, join
 import torchvision.transforms as transforms
 
-from sort.nn_matching import NearestNeighborDistanceMetric
-from sort.detection import Detection
-from sort.tracker import Tracker
+from .sort.nn_matching import NearestNeighborDistanceMetric
+from .sort.detection import Detection
+from .sort.tracker import Tracker
 
-from reid_multibackend import ReIDDetectMultiBackend
+from .reid_multibackend import ReIDDetectMultiBackend
 
 from ultralytics.utils.ops import xyxy2xywh
 

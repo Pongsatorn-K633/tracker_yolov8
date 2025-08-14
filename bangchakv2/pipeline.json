@@ -1,0 +1,99 @@
+{
+    "redis": {
+      "host": "10.100.1.3",
+      "port": 6379,
+      "password": "FBQgi0i5RevAAMO5Hh66",
+      "db": 0
+    },
+    "postgresql": {
+      "host": "10.100.1.3",
+      "port": 5432,
+      "database": "inference",
+      "username": "root",
+      "password": "HkWcmwu2xiDhI84UIK31"
+    },
+    "pipeline": {
+      "modelId": "yolov8n",
+      "modelFile": "yolov8n.pt",
+      "crop": true,
+      "triggerClasses": ["car"],
+      "minConfidence": 0.3,
+      "tracking": {
+        "enabled": true,
+        "method": "strongsort",
+        "reidModel": "osnet_x0_25_msmt17.pt",
+        "stabilityThreshold": 3,
+        "config": {
+          "max_cos_dist": 0.4,
+          "max_iou_dist": 0.7,
+          "max_age": 30,
+          "n_init": 3,
+          "nn_budget": 100
+        }
+      },
+      "branches": [
+        {
+          "modelId": "car_frontal_detection_v1",
+          "modelFile": "car_frontal_detection_v1.pt",
+          "crop": true,
+          "cropClass": "car",
+          "triggerClasses": ["car"],
+          "minConfidence": 0.2,
+          "multiClass": true,
+          "expectedClasses": ["Frontal"],
+          "parallel": true,
+          "branches": [
+            {
+              "modelId": "car_brand_cls_v1",
+              "modelFile": "car_brand_cls_v1.pt",
+              "crop": true,
+              "cropClass": "Frontal",
+              "resizeTarget": [224, 224],
+              "triggerClasses": ["Frontal"],
+              "minConfidence": 0.1,
+              "branches": [],
+              "parallelActions": [
+                {
+                  "type": "redis_save_image",
+                  "region": "Frontal",
+                  "key": "inference:{display_id}:{timestamp}:{session_id}:{filename}",
+                  "expire_seconds": 600,
+                  "format": "jpeg",
+                  "quality": 90
+                },
+                {
+                  "type": "redis_publish",
+                  "channel": "car_detections",
+                  "message": "{\"event\":\"frontal_detected\",\"display_id\":\"{display_id}\",\"session_id\":\"{session_id}\",\"timestamp\":\"{timestamp}\",\"image_key\":\"{image_key}\"}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "modelId": "car_bodytype_cls_v1",
+          "modelFile": "car_bodytype_cls_v1.pt",
+          "crop": true,
+          "cropClass": "car",
+          "resizeTarget": [224, 224],
+          "triggerClasses": ["car"],
+          "minConfidence": 0.5,
+          "parallel": true,
+          "branches": []
+        }
+      ],
+      "parallelActions": [
+        {
+          "type": "postgresql_update_combined",
+          "table": "car_frontal_info",
+          "key_field": "session_id",
+          "key_value": "{session_id}",
+          "waitForBranches": ["car_brand_cls_v1", "car_bodytype_cls_v1"],
+          "fields": {
+            "car_brand": "{car_brand_cls_v1.brand}",
+            "car_body_type": "{car_bodytype_cls_v1.body_type}"
+          }
+        }
+      ]
+    }
+  }

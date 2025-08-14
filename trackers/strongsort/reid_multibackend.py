@@ -12,11 +12,11 @@ from os.path import exists as file_exists
 
 from ultralytics.utils.checks import check_requirements, check_version
 from ultralytics.utils import LOGGER
-from trackers.strongsort.deep.reid_model_factory import (  # type: ignore
+from .deep.reid_model_factory import (  # type: ignore
     show_downloadeable_models, get_model_url, get_model_name,
     download_url, load_pretrained_weights
 )
-from trackers.strongsort.deep.models import build_model  # type: ignore
+from .deep.models import build_model  # type: ignore
 
 
 def check_suffix(file='yolov5s.pt', suffix=('.pt',), msg=''):
@@ -38,6 +38,7 @@ class ReIDDetectMultiBackend(nn.Module):
         super().__init__()
 
         w = weights[0] if isinstance(weights, list) else weights
+        w = Path(w)
         self.pt, self.jit, self.onnx, self.xml, self.engine, self.tflite = self.model_type(w)  # get backend
         self.fp16 = fp16
         self.fp16 &= self.pt or self.jit or self.engine  # FP16
@@ -184,7 +185,7 @@ class ReIDDetectMultiBackend(nn.Module):
     @staticmethod
     def model_type(p='path/to/model.pt'):
         """Return model type from model path, i.e. path='path/to/model.onnx' -> type=onnx"""
-        from trackers.reid_export import export_formats  # pylint: disable=import-outside-toplevel
+        from .reid_export import export_formats  # pylint: disable=import-outside-toplevel
         sf = list(export_formats().Suffix)  # export suffixes
         check_suffix(p, sf)  # checks
         types = [s in Path(p).name for s in sf]

@@ -1,0 +1,16 @@
+# Ultralytics BoT-SORT Tracker Configuration with ReID enabled
+
+tracker_type: botsort # tracker type, ['botsort', 'bytetrack']
+track_high_thresh: 0.25 # threshold for the first association
+track_low_thresh: 0.1 # threshold for the second association
+new_track_thresh: 0.25 # threshold for init new track if detection doesn't match tracks
+track_buffer: 30 # buffer to calculate when to remove tracks
+match_thresh: 0.8 # threshold for matching tracks
+fuse_score: True # fuse confidence scores with IoU distances before matching
+
+# BoT-SORT specific settings
+gmc_method: sparseOptFlow # global motion compensation method
+proximity_thresh: 0.5 # minimum IoU for valid ReID match
+appearance_thresh: 0.8 # minimum appearance similarity for ReID
+with_reid: True # Enable ReID for better tracking continuity
+model: auto # uses native features if detector is YOLO else yolo11n-cls.pt

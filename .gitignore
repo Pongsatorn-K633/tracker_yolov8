@@ -4,3 +4,5 @@
 cache/
 runs/
 *.mp4
+.claude/
+archive_test/
